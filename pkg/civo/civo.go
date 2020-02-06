@@ -12,11 +12,6 @@ import (
 	"time"
 )
 
-var WantClusters = []string{
-	"civo-iot",
-	"dukemon",
-}
-
 type Clusters struct {
 	Page    int `json:"page"`
 	PerPage int `json:"per_page"`
@@ -117,6 +112,28 @@ func GetCluster(name string) (string, error) {
 	return "", nil
 }
 
+func DeleteCluster(name string) error {
+	uri := fmt.Sprintf("https://api.civo.com/v2/kubernetes/clusters/%s", name)
+
+	// Create a Bearer string by appending string access token
+	var bearer = "Bearer " + os.Getenv("CIVO_API_KEY")
+
+	// Create a new request using http
+	req, err := http.NewRequest(http.MethodDelete, uri, nil)
+	req.Header.Add("Authorization", bearer)
+
+	// Send req using http Client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println(err)
+	}
+
+	log.Infof("status: %s", resp.Status)
+
+	return nil
+}
+
 func CreateCluster(name string) error {
 	uri := "https://api.civo.com/v2/kubernetes/clusters"
 
@@ -144,26 +161,25 @@ func CreateCluster(name string) error {
 func getClusters() (*Clusters, error) {
 	url := "https://api.civo.com/v2/kubernetes/clusters"
 
-    // Create a Bearer string by appending string access token
-    var bearer = "Bearer " + "c1CL3b7Q0XpG2MJ58FeIwVmkPRNAUuYtxEnlSWdDiy9vjqzsrH"
+	// Create a Bearer string by appending string access token
+	var bearer = "Bearer " + os.Getenv("CIVO_API_KEY")
 
-    // Create a new request using http
-    req, err := http.NewRequest("GET", url, nil)
+	// Create a new request using http
+	req, err := http.NewRequest("GET", url, nil)
 
-    // add authorization header to the req
-    req.Header.Add("Authorization", bearer)
+	// add authorization header to the req
+	req.Header.Add("Authorization", bearer)
 
-    // Send req using http Client
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        log.Println("Error on response.\n[ERRO] -", err)
-    }
+	// Send req using http Client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
 
-    body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := ioutil.ReadAll(resp.Body)
 
-    v := Clusters{}
+	v := Clusters{}
 	json.Unmarshal(body, &v)
 	return &v, nil
 }
-
