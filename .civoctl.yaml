@@ -1,3 +1,5 @@
 clusters:
-  - name: civo-iot
+  - name: civo-1
+    nodes: 3
+  - name: civo-2
     nodes: 2
