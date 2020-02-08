@@ -1,8 +1,8 @@
 # civoctl
 
-CivoCtl is a simple controller to reconcile a list of cluster names with actual k3s clusters in Civo cloud.
+Civoctl is a simple controller to reconcile a list of cluster names with actual k3s clusters in Civo cloud.
 
-CivoCtl accepts a yaml list of clusters. As cluster names are added or deleted from the lists, civoctl will create and delete clusters through the Civo API
+Civoctl accepts a yaml list of clusters. As cluster names are added or deleted from the lists, civoctl will create and delete clusters through the Civo API
 
 ```yaml
 clusters:
