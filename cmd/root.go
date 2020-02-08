@@ -43,7 +43,7 @@ func init() {
 	viper.SetEnvPrefix("civo")
 	viper.BindEnv("token")
 
-	viper.Debug()
+	//viper.Debug()
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -14,6 +14,10 @@ clusters:
 
 _Note_: Civoctl will watch the file for changes, any updates made to the configuration file will be realized during the subsequent reconcilliation cycle.
 
+---
+
+[![asciicast](https://asciinema.org/a/ixyibXl2V8RHXxs3ZJ28QMIag.svg)](https://asciinema.org/a/ixyibXl2V8RHXxs3ZJ28QMIag)
+
 ## Usage
 
 ### Download

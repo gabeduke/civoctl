@@ -33,7 +33,7 @@ var runCmd = &cobra.Command{
 		}()
 
 		//TODO
-		log.SetLevel(log.DebugLevel)
+		//log.SetLevel(log.DebugLevel)
 
 		civoController.Run(app)
 	},
