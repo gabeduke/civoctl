@@ -116,7 +116,7 @@ func listerWatcher(app *config.App) controller.ListerWatcher {
 					extras := missing(want, have)
 
 					for _, name := range extras {
-						id, err := civo.GetCluster(name)
+						id, err := civo.GetClusterId(name)
 						if err != nil {
 							log.Error(err)
 						}
@@ -139,7 +139,7 @@ func listerWatcher(app *config.App) controller.ListerWatcher {
 
 func storage() controller.Storage {
 	return controller.StorageFunc(func(_ context.Context, name string) (interface{}, error) {
-		id, err := civo.GetCluster(name)
+		id, err := civo.GetClusterId(name)
 		if err != nil {
 			return nil, err
 		}

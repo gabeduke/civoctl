@@ -9,12 +9,14 @@ import (
 	"os"
 )
 
+const app = "civoctl"
+
 var (
 	cfgFile string
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "civo-controller",
+	Use:   app,
 	Short: "Civo cluster controller",
 	Long: `The civo control loop will watch a given list of cluster names
 and create/delete clusters as the list is updated.
@@ -33,7 +35,10 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.civo-controller.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/.%s.yaml)", app))
+	rootCmd.PersistentFlags().String("token", "", "Civo API Token (env variable: CIVO_API_KEY)")
+
+	viper.BindPFlag("CIVO_API_KEY", rootCmd.Flag("token"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -51,12 +56,12 @@ func initConfig() {
 		}
 
 		// Search config in home directory with name ".civo-controller" (without extension).
-		viper.AddConfigPath("/etc/civo-controller/")
+		viper.AddConfigPath(fmt.Sprintf("/etc/%s/", app))
 		viper.AddConfigPath(home)
 		viper.AddConfigPath(".")
 
 		viper.SetConfigType("yaml") // REQUIRED if the config file does not have the extension in the name
-		viper.SetConfigName(".civo-controller")
+		viper.SetConfigName("." + app)
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
