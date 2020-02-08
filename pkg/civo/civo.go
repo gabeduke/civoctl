@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"golang.org/x/oauth2"
 	"io/ioutil"
 	"net/http"
@@ -15,7 +14,24 @@ import (
 
 const baseUri = "https://api.civo.com/v2/kubernetes/clusters"
 
-type Clusters struct {
+// Civoer interfaces with the Civo API
+type Civoer interface {
+	getClusters() (*clusters, error)
+
+	GetClusterId(name string) (id string, err error)
+	GetClusterNames() []string
+	CreateCluster(name string) error
+	DeleteCluster(name string) error
+}
+
+// Civo holds the Civoer interface and http client
+type Civo struct {
+	Civoer
+	client *http.Client
+}
+
+// clusters is the Civo API response for clusters list
+type clusters struct {
 	Items   []struct {
 		ID                string        `json:"id"`
 		Name              string        `json:"name"`
@@ -31,8 +47,17 @@ type Clusters struct {
 	} `json:"items"`
 }
 
-func GetClusterId(name string) (id string, err error) {
-	v, err := getClusters()
+// newCivoHandler generates an authenticated client for the Civo API
+func newCivoHandler(token string) *Civo {
+	c := Civo{}
+	c.client = getCivoHttpClient(token)
+
+	return &c
+}
+
+// GetClusterId gets an ID for a given cluster name
+func (c *Civo) GetClusterId(name string) (id string, err error) {
+	v, err := c.getClusters()
 	if err != nil {
 		return "", err
 	}
@@ -45,17 +70,18 @@ func GetClusterId(name string) (id string, err error) {
 	return "", nil
 }
 
-func getCivoHttpClient() *http.Client {
+func getCivoHttpClient(token string) *http.Client {
 	ctx := context.Background()
 	client := oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{
-		AccessToken: viper.GetString("CIVO_API_KEY"),
+		AccessToken: token,
 		TokenType:   "Bearer",
 	}))
 
 	return client
 }
 
-func DeleteCluster(name string) error {
+// DeleteCluster calls delete from the Civo API
+func (c *Civo) DeleteCluster(name string) error {
 
 	uri := fmt.Sprintf("%s/%s", baseUri, name)
 
@@ -63,8 +89,7 @@ func DeleteCluster(name string) error {
 	req, err := http.NewRequest(http.MethodDelete, uri, nil)
 
 	// Send req using http Client
-	client := getCivoHttpClient()
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		log.Println(err)
 	}
@@ -74,7 +99,8 @@ func DeleteCluster(name string) error {
 	return nil
 }
 
-func CreateCluster(name string) error {
+// CreateCluster calls create from the Civo API
+func (c *Civo) CreateCluster(name string) error {
 	data := url.Values{}
 	data.Set("name", name)
 
@@ -83,8 +109,7 @@ func CreateCluster(name string) error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 
 	// Send req using http Client
-	client := getCivoHttpClient()
-	_, err = client.Do(req)
+	_, err = c.client.Do(req)
 	if err != nil {
 		log.Println(err)
 	}
@@ -92,10 +117,11 @@ func CreateCluster(name string) error {
 	return nil
 }
 
-func GetClusterNames() []string {
+// GetClusterNames gets a list of clusters from the Civo API
+func (c *Civo) GetClusterNames() []string {
 	var clusters []string
 
-	v, err := getClusters()
+	v, err := c.getClusters()
 	if err != nil {
 		log.Error(err)
 	}
@@ -105,17 +131,16 @@ func GetClusterNames() []string {
 	return clusters
 }
 
-func getClusters() (*Clusters, error) {
+func (c *Civo) getClusters() (*clusters, error) {
 
-	client := getCivoHttpClient()
-	resp, err := client.Get(baseUri)
+	resp, err := c.client.Get(baseUri)
 	if err != nil {
 		log.Error(err)
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
 
-	v := Clusters{}
+	v := clusters{}
 	json.Unmarshal(body, &v)
 	return &v, nil
 }

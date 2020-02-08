@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/gabeduke/civo-controller/cmd"
+import "github.com/gabeduke/civoctl/cmd"
 
 func main() {
 	cmd.Execute()

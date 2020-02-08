@@ -2,8 +2,7 @@ package controller
 
 import (
 	"context"
-	"github.com/gabeduke/civo-controller/pkg/civo"
-	"github.com/gabeduke/civo-controller/pkg/config"
+	"github.com/gabeduke/civoctl/pkg/civo"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -28,6 +27,7 @@ type civoCluster struct {
 // empty struct (0 bytes)
 type void struct{}
 
+// missing looks for strings in a that are missing from b
 func missing(a, b []string) []string {
 	// create map with length of the 'a' slice
 	ma := make(map[string]void, len(a))
@@ -45,7 +45,8 @@ func missing(a, b []string) []string {
 	return diffs
 }
 
-func Run(app *config.App) {
+// Run begins the CivoCtl loop
+func Run(civoCtl *civo.CivoCtl) {
 	log.Info("Beginning Civo control loop")
 
 	// Create prometheus metrics and serve the metrics.
@@ -56,14 +57,14 @@ func Run(app *config.App) {
 	}()
 
 	// Create all required components for the controller.
-	lw := listerWatcher(app)
-	st := storage()
-	h := handler(log.StandardLogger())
+	lw := listerWatcher(civoCtl)
+	st := storage(civoCtl)
+	h := handler(civoCtl, log.StandardLogger())
 	metricsrecorder := metrics.NewPrometheus(promreg)
 
 	// Create and run the controller.
 	ctrl, err := controller.New(controller.Config{
-		Name:            "civo-controller",
+		Name:            "civoctl",
 		Workers:         3,
 		MaxRetries:      2,
 		ListerWatcher:   lw,
@@ -91,8 +92,8 @@ func Run(app *config.App) {
 	log.Infof("signal captured, exiting...")
 }
 
-func getClustersFromCfg(app *config.App) []string {
-	cfg := app.Config()
+func getClustersFromCfg(civoCtl *civo.CivoCtl) []string {
+	cfg := civoCtl.Config()
 	var clusters []string
 	for _, c := range cfg.Clusters {
 		clusters = append(clusters, c.Name)
@@ -100,23 +101,23 @@ func getClustersFromCfg(app *config.App) []string {
 	return clusters
 }
 
-func listerWatcher(app *config.App) controller.ListerWatcher {
+func listerWatcher(civoCtl *civo.CivoCtl) controller.ListerWatcher {
 
 	return &controller.ListerWatcherFunc{
 		ListFunc: func(_ context.Context) ([]string, error) {
-			c := getClustersFromCfg(app)
+			c := getClustersFromCfg(civoCtl)
 			return c, nil
 		},
 		WatchFunc: func(_ context.Context) (<-chan controller.Event, error) {
 			c := make(chan controller.Event)
 			go func() {
 				for {
-					want := getClustersFromCfg(app)
-					have := civo.GetClusterNames()
+					want := getClustersFromCfg(civoCtl)
+					have := civoCtl.Client.GetClusterNames()
 					extras := missing(want, have)
 
 					for _, name := range extras {
-						id, err := civo.GetClusterId(name)
+						id, err := civoCtl.Client.GetClusterId(name)
 						if err != nil {
 							log.Error(err)
 						}
@@ -137,9 +138,9 @@ func listerWatcher(app *config.App) controller.ListerWatcher {
 	}
 }
 
-func storage() controller.Storage {
+func storage(civoCtl *civo.CivoCtl) controller.Storage {
 	return controller.StorageFunc(func(_ context.Context, name string) (interface{}, error) {
-		id, err := civo.GetClusterId(name)
+		id, err := civoCtl.Client.GetClusterId(name)
 		if err != nil {
 			return nil, err
 		}
@@ -148,20 +149,20 @@ func storage() controller.Storage {
 	})
 }
 
-func handler(logger *log.Logger) controller.Handler {
+func handler(civoCtl *civo.CivoCtl, logger *log.Logger) controller.Handler {
 	return &controller.HandlerFunc{
 		AddFunc: func(_ context.Context, obj interface{}) error {
 			cluster := obj.(*civoCluster)
 			if cluster.ID == "" {
 				logger.Infof("attempt create object %s", cluster.Name)
-				civo.CreateCluster(cluster.Name)
+				civoCtl.Client.CreateCluster(cluster.Name)
 				return nil
 			}
 			return nil
 		},
 		DeleteFunc: func(_ context.Context, id string) error {
 			logger.Infof("attempt delete object %s", id)
-			civo.DeleteCluster(id)
+			civoCtl.Client.DeleteCluster(id)
 			return nil
 		},
 	}

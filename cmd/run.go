@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"github.com/gabeduke/civo-controller/pkg/config"
-	civoController "github.com/gabeduke/civo-controller/pkg/controller"
+	"github.com/gabeduke/civoctl/pkg/civo"
+	civoController "github.com/gabeduke/civoctl/pkg/controller"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -18,12 +19,12 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info("Beginning Civo control loop")
 
-		c, cfgCh := config.LoadConfig()
-		app := config.New(c)
+		c, cfgCh := civo.LoadConfig()
+		app := civo.NewCivoCtl(c, viper.GetString("token"))
 		go func() {
 			for {
 				app.SetConfig(<-cfgCh)
-				log.Println("New config loaded")
+				log.Println("NewCivoCtl config loaded")
 			}
 		}()
 

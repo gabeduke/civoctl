@@ -1,1 +1,1 @@
-# civo-controller
+# civoctl

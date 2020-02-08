@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
-
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -37,8 +36,14 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/.%s.yaml)", app))
 	rootCmd.PersistentFlags().String("token", "", "Civo API Token (env variable: CIVO_API_KEY)")
+	rootCmd.PersistentFlags().BoolP("dangerous", "d", true, "Dangerous mode will delete clusters not in the config file")
 
-	viper.BindPFlag("CIVO_API_KEY", rootCmd.Flag("token"))
+	viper.BindPFlags(rootCmd.PersistentFlags())
+
+	viper.SetEnvPrefix("civo")
+	viper.BindEnv("token")
+
+	viper.Debug()
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -55,7 +60,7 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".civo-controller" (without extension).
+		// Search config in home directory with name ".civoctl" (without extension).
 		viper.AddConfigPath(fmt.Sprintf("/etc/%s/", app))
 		viper.AddConfigPath(home)
 		viper.AddConfigPath(".")

@@ -1,37 +1,52 @@
-package config
+package civo
 
 import (
-	"sync"
-	"time"
-
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+	"sync"
+	"time"
 )
 
-type App struct {
-	cfg  *Config
-	lock sync.Mutex
+// CivoCtl holds the config and interface for a Civo Controller
+type CivoCtl struct {
+	Client *Civo
+	cfg    *Config
+	lock   sync.Mutex
 }
 
-func New(cfg *Config) *App {
-	return &App{
-		cfg: cfg,
+// Config contains the list of clusters CivoCtl will handle
+type Config struct {
+	Clusters []struct {
+		Name  string `yaml:"name"`
+		Nodes int    `yaml:"nodes"`
+	} `yaml:"clusters"`
+}
+
+// NewCivoCtl configures a Civo interface
+func NewCivoCtl(cfg *Config, token string) *CivoCtl {
+	civo := newCivoHandler(token)
+	return &CivoCtl{
+		Client: civo,
+		cfg:    cfg,
 	}
 }
 
-func (a *App) Config() *Config {
+// Config returns a safe copy of CivoCtl cfg
+func (a *CivoCtl) Config() *Config {
 	a.lock.Lock()
 	cfg := a.cfg
 	a.lock.Unlock()
 	return cfg
 }
 
-func (a *App) SetConfig(cfg *Config) {
+// SetConfig sets a safe copy of CivoCtl cfg
+func (a *CivoCtl) SetConfig(cfg *Config) {
 	a.lock.Lock()
 	a.cfg = cfg
 	a.lock.Unlock()
 }
 
+// LoadConfig returns a config from viper and updates channel
 func LoadConfig() (*Config, chan *Config) {
 
 	//TODO check for nil cfg
@@ -67,7 +82,7 @@ func LoadConfig() (*Config, chan *Config) {
 //
 //		c, cfgCh := LoadConfig()
 //
-//		x := App{}
+//		x := CivoCtl{}
 //		x.setConfig(<-cfgCh)
 //
 //		fmt.Println(&c)

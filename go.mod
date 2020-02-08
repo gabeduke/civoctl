@@ -1,4 +1,4 @@
-module github.com/gabeduke/civo-controller
+module github.com/gabeduke/civoctl
 
 go 1.13
 
