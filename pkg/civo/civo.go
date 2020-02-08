@@ -32,7 +32,7 @@ type Civo struct {
 
 // clusters is the Civo API response for clusters list
 type clusters struct {
-	Items   []struct {
+	Items []struct {
 		ID                string        `json:"id"`
 		Name              string        `json:"name"`
 		Version           string        `json:"version"`

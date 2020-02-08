@@ -9,9 +9,10 @@ import (
 
 // CivoCtl holds the config and interface for a Civo Controller
 type CivoCtl struct {
-	Client *Civo
-	cfg    *Config
-	lock   sync.Mutex
+	Client    *Civo
+	cfg       *Config
+	lock      sync.Mutex
+	Dangerous bool
 }
 
 // Config contains the list of clusters CivoCtl will handle
@@ -23,11 +24,12 @@ type Config struct {
 }
 
 // NewCivoCtl configures a Civo interface
-func NewCivoCtl(cfg *Config, token string) *CivoCtl {
+func NewCivoCtl(cfg *Config, token string, dangerous bool) *CivoCtl {
 	civo := newCivoHandler(token)
 	return &CivoCtl{
 		Client: civo,
 		cfg:    cfg,
+		Dangerous: dangerous,
 	}
 }
 

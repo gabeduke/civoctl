@@ -9,3 +9,6 @@ run:
 
 build:
 	go build -o bin/civoctl
+
+fmt:
+	go fmt ./...

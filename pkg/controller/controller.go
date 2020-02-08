@@ -162,7 +162,12 @@ func handler(civoCtl *civo.CivoCtl, logger *log.Logger) controller.Handler {
 		},
 		DeleteFunc: func(_ context.Context, id string) error {
 			logger.Infof("attempt delete object %s", id)
-			civoCtl.Client.DeleteCluster(id)
+			if civoCtl.Dangerous {
+				civoCtl.Client.DeleteCluster(id)
+				return nil
+			}
+
+			logger.Warn("delete blocked, enable dangerous mode to proceed")
 			return nil
 		},
 	}

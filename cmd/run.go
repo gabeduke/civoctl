@@ -19,8 +19,12 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info("Beginning Civo control loop")
 
+		if viper.GetBool("dangerous") {
+			log.Warn("Dangerous mode enabled clusters may be deleted!")
+		}
+
 		c, cfgCh := civo.LoadConfig()
-		app := civo.NewCivoCtl(c, viper.GetString("token"))
+		app := civo.NewCivoCtl(c, viper.GetString("token"), viper.GetBool("dangerous"))
 		go func() {
 			for {
 				app.SetConfig(<-cfgCh)

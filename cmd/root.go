@@ -36,7 +36,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/.%s.yaml)", app))
 	rootCmd.PersistentFlags().String("token", "", "Civo API Token (env variable: CIVO_API_KEY)")
-	rootCmd.PersistentFlags().BoolP("dangerous", "d", true, "Dangerous mode will delete clusters not in the config file")
+	rootCmd.PersistentFlags().BoolP("dangerous", "d", false, "Dangerous mode will delete clusters not in the config file")
 
 	viper.BindPFlags(rootCmd.PersistentFlags())
 
