@@ -158,6 +158,19 @@ func CreateCluster(name string) error {
 	return nil
 }
 
+func GetClusterNames() []string {
+	var clusters []string
+
+	v, err := getClusters()
+	if err != nil {
+		log.Error(err)
+	}
+	for _, c := range v.Items {
+		clusters = append(clusters, c.Name)
+	}
+	return clusters
+}
+
 func getClusters() (*Clusters, error) {
 	url := "https://api.civo.com/v2/kubernetes/clusters"
 

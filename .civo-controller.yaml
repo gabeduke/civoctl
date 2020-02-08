@@ -1,7 +1,3 @@
 clusters:
   - name: civo-iot
     nodes: 2
-  - name: dukemon
-    nodes: 2
-  - name: asdf
-    nodes: 2

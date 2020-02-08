@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"github.com/gabeduke/civo-controller/pkg/civo"
 	"github.com/gabeduke/civo-controller/pkg/config"
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,20 +25,27 @@ type civoCluster struct {
 	Name string
 }
 
-func missing(a, b []string) string {
-	ma := make(map[string]bool, len(a))
+// empty struct (0 bytes)
+type void struct{}
+
+func missing(a, b []string) []string {
+	// create map with length of the 'a' slice
+	ma := make(map[string]void, len(a))
+	diffs := []string{}
+	// Convert first slice to map with empty struct (0 bytes)
 	for _, ka := range a {
-		ma[ka] = true
+		ma[ka] = void{}
 	}
+	// find missing values in a
 	for _, kb := range b {
-		if !ma[kb] {
-			return kb
+		if _, ok := ma[kb]; !ok {
+			diffs = append(diffs, kb)
 		}
 	}
-	return ""
+	return diffs
 }
 
-func Run(app config.App) {
+func Run(app *config.App) {
 	log.Info("Beginning Civo control loop")
 
 	// Create prometheus metrics and serve the metrics.
@@ -50,9 +56,9 @@ func Run(app config.App) {
 	}()
 
 	// Create all required components for the controller.
-	lw := CreateListerWatcher(".civo-controller.yaml")
-	st := CreateStorage()
-	h := CreateHandler(log.StandardLogger())
+	lw := listerWatcher(app)
+	st := storage()
+	h := handler(log.StandardLogger())
 	metricsrecorder := metrics.NewPrometheus(promreg)
 
 	// Create and run the controller.
@@ -85,57 +91,43 @@ func Run(app config.App) {
 	log.Infof("signal captured, exiting...")
 }
 
-func clustersWant() ([]string, error) {
-
-	var clusterNames []string
-	for _, cluster := range c.Clusters {
-		clusterNames = append(clusterNames, cluster.Name)
+func getClustersFromCfg(app *config.App) []string {
+	cfg := app.Config()
+	var clusters []string
+	for _, c := range cfg.Clusters {
+		clusters = append(clusters, c.Name)
 	}
-
-	return clusterNames, nil
+	return clusters
 }
 
-func CreateListerWatcher(cfgFile string) controller.ListerWatcher {
-	clustersWant, err := clustersWant(cfgFile)
-	if err != nil {
-		log.Error(err)
-	}
+func listerWatcher(app *config.App) controller.ListerWatcher {
 
 	return &controller.ListerWatcherFunc{
 		ListFunc: func(_ context.Context) ([]string, error) {
-
-			var clusterNames []string
-			for _, cluster := range listConfig.Clusters {
-				clustersWant = append(clustersWant, cluster.Name)
-			}
-
-			return clusterNames, nil
+			c := getClustersFromCfg(app)
+			return c, nil
 		},
 		WatchFunc: func(_ context.Context) (<-chan controller.Event, error) {
 			c := make(chan controller.Event)
 			go func() {
-
 				for {
-					// create a local copy so we can get fresh state
-					watchConfig := config.Config{}
-					v.Unmarshal(&watchConfig)
-					var watchClusterNames []string
-					for _, cluster := range watchConfig.Clusters {
-						watchClusterNames = append(watchClusterNames, cluster.Name)
-					}
+					want := getClustersFromCfg(app)
+					have := civo.GetClusterNames()
+					extras := missing(want, have)
 
-					x := missing(watchClusterNames, clusterNames)
-					if x != "" {
-						id, err := civo.GetCluster(x)
+					for _, name := range extras {
+						id, err := civo.GetCluster(name)
 						if err != nil {
-							fmt.Println(err.Error())
+							log.Error(err)
 						}
+
 						c <- controller.Event{
 							ID:   id,
 							Kind: controller.EventDeleted,
 						}
+
 					}
-					clusterNames = watchClusterNames
+
 					time.Sleep(10 * time.Second)
 
 				}
@@ -145,7 +137,7 @@ func CreateListerWatcher(cfgFile string) controller.ListerWatcher {
 	}
 }
 
-func CreateStorage() controller.Storage {
+func storage() controller.Storage {
 	return controller.StorageFunc(func(_ context.Context, name string) (interface{}, error) {
 		id, err := civo.GetCluster(name)
 		if err != nil {
@@ -156,7 +148,7 @@ func CreateStorage() controller.Storage {
 	})
 }
 
-func CreateHandler(logger *log.Logger) controller.Handler {
+func handler(logger *log.Logger) controller.Handler {
 	return &controller.HandlerFunc{
 		AddFunc: func(_ context.Context, obj interface{}) error {
 			cluster := obj.(*civoCluster)

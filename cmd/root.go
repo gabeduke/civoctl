@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/gabeduke/civo-controller/pkg/config"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -13,7 +11,6 @@ import (
 
 var (
 	cfgFile string
-	app     config.App
 )
 
 var rootCmd = &cobra.Command{
@@ -54,7 +51,11 @@ func initConfig() {
 		}
 
 		// Search config in home directory with name ".civo-controller" (without extension).
+		viper.AddConfigPath("/etc/civo-controller/")
 		viper.AddConfigPath(home)
+		viper.AddConfigPath(".")
+
+		viper.SetConfigType("yaml") // REQUIRED if the config file does not have the extension in the name
 		viper.SetConfigName(".civo-controller")
 	}
 
@@ -65,15 +66,4 @@ func initConfig() {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
-	c, cfgCh := config.LoadConfig()
-	app := config.New(c)
-	go func() {
-		for {
-			app.SetConfig(<-cfgCh)
-			log.Println("New config loaded")
-		}
-	}()
-
-	//TODO
-	log.SetLevel(log.DebugLevel)
 }
