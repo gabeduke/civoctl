@@ -91,7 +91,12 @@ func (c *Civo) DeleteCluster(name string) error {
 	// Send req using http Client
 	resp, err := c.client.Do(req)
 	if err != nil {
-		log.Println(err)
+		return err
+	}
+
+	err = handleResponse(resp)
+	if err != nil {
+		return err
 	}
 
 	log.Infof("status: %s", resp.Status)
@@ -109,33 +114,43 @@ func (c *Civo) CreateCluster(name string) error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 
 	// Send req using http Client
-	_, err = c.client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
-		log.Println(err)
+		return err
+	}
+
+	err = handleResponse(resp)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // GetClusterNames gets a list of clusters from the Civo API
-func (c *Civo) GetClusterNames() []string {
+func (c *Civo) GetClusterNames() ([]string, error) {
 	var clusters []string
 
 	v, err := c.getClusters()
 	if err != nil {
-		log.Error(err)
+		return nil, err
 	}
 	for _, c := range v.Items {
 		clusters = append(clusters, c.Name)
 	}
-	return clusters
+	return clusters, nil
 }
 
 func (c *Civo) getClusters() (*clusters, error) {
 
 	resp, err := c.client.Get(baseUri)
 	if err != nil {
-		log.Error(err)
+		return nil, err
+	}
+
+	err = handleResponse(resp)
+	if err != nil {
+		return nil, err
 	}
 
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -143,4 +158,13 @@ func (c *Civo) getClusters() (*clusters, error) {
 	v := clusters{}
 	json.Unmarshal(body, &v)
 	return &v, nil
+}
+
+func handleResponse(resp *http.Response) error {
+	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+		log.Debugf("Response status: %s", resp.StatusCode)
+	} else {
+		return fmt.Errorf("civo response status: %v", resp.StatusCode)
+	}
+	return nil
 }

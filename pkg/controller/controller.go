@@ -113,13 +113,16 @@ func listerWatcher(civoCtl *civo.CivoCtl) controller.ListerWatcher {
 			go func() {
 				for {
 					want := getClustersFromCfg(civoCtl)
-					have := civoCtl.Client.GetClusterNames()
+					have, err := civoCtl.Client.GetClusterNames()
+					if err != nil {
+						log.Errorf("unable to get cluster names: %v", err)
+					}
 					extras := missing(want, have)
 
 					for _, name := range extras {
 						id, err := civoCtl.Client.GetClusterId(name)
 						if err != nil {
-							log.Error(err)
+							log.Errorf("unable to get cluster id: %v", err)
 						}
 
 						c <- controller.Event{
