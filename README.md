@@ -16,7 +16,7 @@ _Note_: Civoctl will watch the file for changes, any updates made to the configu
 
 ---
 
-[![asciicast](https://asciinema.org/a/ixyibXl2V8RHXxs3ZJ28QMIag.svg)](https://asciinema.org/a/ixyibXl2V8RHXxs3ZJ28QMIag)
+[![asciicast](https://asciinema.org/a/8E4xO0YhHSt3BEbXbbEuZxGxL.svg)](https://asciinema.org/a/8E4xO0YhHSt3BEbXbbEuZxGxL)
 
 ## Usage
 
