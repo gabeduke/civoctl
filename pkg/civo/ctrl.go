@@ -27,8 +27,8 @@ type Config struct {
 func NewCivoCtl(cfg *Config, token string, dangerous bool) *CivoCtl {
 	civo := newCivoHandler(token)
 	return &CivoCtl{
-		Client: civo,
-		cfg:    cfg,
+		Client:    civo,
+		cfg:       cfg,
 		Dangerous: dangerous,
 	}
 }

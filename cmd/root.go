@@ -6,7 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
 )
 
 const app = "civoctl"
@@ -38,13 +37,13 @@ var versionCmd = &cobra.Command{
 func Execute(version string) {
 	VERSION = version
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	rootCmd.AddCommand(versionCmd)
 
 	flags := rootCmd.PersistentFlags()
 
@@ -95,8 +94,7 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Error(err)
 		}
 
 		// Search config in home directory with name ".civoctl" (without extension).
@@ -112,7 +110,7 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		log.Debugf("Using config file:", viper.ConfigFileUsed())
 	}
 
 }
