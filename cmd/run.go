@@ -16,6 +16,9 @@ const (
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run the civo control loop",
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		initLogger()
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info("Beginning Civo control loop")
 
@@ -31,9 +34,6 @@ var runCmd = &cobra.Command{
 				log.Println("NewCivoCtl config loaded")
 			}
 		}()
-
-		//TODO
-		//log.SetLevel(log.DebugLevel)
 
 		civoController.Run(app)
 	},

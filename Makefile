@@ -10,5 +10,8 @@ run:
 build:
 	go build -o bin/civoctl
 
+release:
+	GOVERSION=$(VERSION) goreleaser
+
 fmt:
 	go fmt ./...

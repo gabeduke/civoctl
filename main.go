@@ -23,6 +23,8 @@ package main
 
 import "github.com/gabeduke/civoctl/cmd"
 
+var Version = "development"
+
 func main() {
-	cmd.Execute()
+	cmd.Execute(Version)
 }
