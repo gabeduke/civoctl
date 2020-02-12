@@ -1,5 +1,5 @@
 clusters:
-  - name: civo-1
-    nodes: 3
-  - name: civo-2
-    nodes: 2
+#  - name: civo-1
+#    nodes: 1
+#  - name: civo-2
+#    nodes: 2

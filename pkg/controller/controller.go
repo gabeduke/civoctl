@@ -19,11 +19,6 @@ const (
 	metricsListenAddr = ":8081"
 )
 
-type civoCluster struct {
-	ID   string
-	Name string
-}
-
 // empty struct (0 bytes)
 type void struct{}
 
@@ -92,6 +87,17 @@ func Run(civoCtl *civo.CivoCtl) {
 	log.Infof("signal captured, exiting...")
 }
 
+func getNumNodesFromCfg(civoCtl *civo.CivoCtl, name string) int {
+	cfg := civoCtl.Config()
+	for _, c := range cfg.Clusters {
+		if c.Name == name {
+			return c.Nodes
+		}
+	}
+
+	return 0
+}
+
 func getClustersFromCfg(civoCtl *civo.CivoCtl) []string {
 	cfg := civoCtl.Config()
 	var clusters []string
@@ -113,6 +119,8 @@ func listerWatcher(civoCtl *civo.CivoCtl) controller.ListerWatcher {
 			go func() {
 				for {
 					want := getClustersFromCfg(civoCtl)
+					log.Debugf("Clusters from config: %v", want)
+
 					have, err := civoCtl.Client.GetClusterNames()
 					if err != nil {
 						log.Errorf("unable to get cluster names: %v", err)
@@ -148,17 +156,21 @@ func storage(civoCtl *civo.CivoCtl) controller.Storage {
 			return nil, err
 		}
 
-		return &civoCluster{ID: id, Name: name}, nil
+		return &civo.Cluster{
+			ID: id,
+			Name: name,
+		}, nil
 	})
 }
 
 func handler(civoCtl *civo.CivoCtl, logger *log.Logger) controller.Handler {
 	return &controller.HandlerFunc{
 		AddFunc: func(_ context.Context, obj interface{}) error {
-			cluster := obj.(*civoCluster)
+			cluster := obj.(*civo.Cluster)
 			if cluster.ID == "" {
 				logger.Infof("attempt create object %s", cluster.Name)
-				civoCtl.Client.CreateCluster(cluster.Name)
+				cluster.NumTargetNodes = getNumNodesFromCfg(civoCtl, cluster.Name)
+				civoCtl.Client.CreateCluster(cluster)
 				return nil
 			}
 			return nil

@@ -15,12 +15,12 @@ type CivoCtl struct {
 	Dangerous bool
 }
 
-// Config contains the list of clusters CivoCtl will handle
+// Config contains the list of Clusters CivoCtl will handle
 type Config struct {
 	Clusters []struct {
 		Name  string `yaml:"name"`
 		Nodes int    `yaml:"nodes"`
-	} `yaml:"clusters"`
+	} `yaml:"Clusters"`
 }
 
 // NewCivoCtl configures a Civo interface
